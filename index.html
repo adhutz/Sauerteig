@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#2B2119">
+<title>Krume — Sauerteig-Begleiter</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Krume">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EFE8DB;--surface:#FBF7EF;--surface-2:#F5EEE1;--ink:#2B2119;--ink-soft:#6B5D4C;
+    --line:#DDD2BF;--rye:#4B6238;--rye-soft:#E7ECDD;--ember:#B4661A;--ember-soft:#F6E7D3;
+    --crumb:#EFD9A9;--red:#A23E2A;--red-soft:#F4DED7;
+    --radius:14px;--radius-lg:20px;--shadow:0 1px 0 rgba(43,33,25,.04),0 10px 30px -18px rgba(43,33,25,.35);
+    --font-display:"Bricolage Grotesque",system-ui,sans-serif;--font-body:"Inter",system-ui,sans-serif;
+    --font-mono:"Spline Sans Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:var(--font-body);background:var(--paper);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom)}
+  h1,h2,h3{font-family:var(--font-display);font-weight:700;line-height:1.1;margin:0}
+  button{font-family:inherit;cursor:pointer}
+  input,select,textarea{font-family:inherit}
+  .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+  header{position:sticky;top:0;z-index:40;background:rgba(43,33,25,.97);color:var(--paper);padding:calc(env(safe-area-inset-top) + 10px) 16px 8px;border-bottom:1px solid rgba(255,255,255,.08)}
+  .brand{display:flex;align-items:center;gap:10px}
+  .mark{width:30px;height:30px;border-radius:8px;flex:none;background:radial-gradient(circle at 35% 30%,var(--crumb),var(--ember) 90%);box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.2);position:relative}
+  .mark::after{content:"";position:absolute;inset:8px 7px auto 7px;height:3px;border-radius:3px;background:rgba(43,33,25,.55);transform:rotate(-18deg);box-shadow:0 6px 0 -1px rgba(43,33,25,.4),0 11px 0 -2px rgba(43,33,25,.3)}
+  .brand h1{font-size:1.02rem;letter-spacing:.2px}
+  .brand small{display:block;font-family:var(--font-body);font-weight:400;font-size:.66rem;opacity:.6;letter-spacing:.4px;text-transform:uppercase}
+  .headrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .now-mini{display:flex;align-items:center;gap:9px;min-width:0}
+  .now-mini .lbl{font-size:.7rem;opacity:.65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:38vw}
+  .now-mini .t{font-family:var(--font-mono);font-size:.95rem;font-weight:500;padding:3px 8px;border-radius:8px;background:rgba(255,255,255,.09)}
+  .now-mini .t.run{background:var(--rye);color:#fff}
+  .now-mini .t.alarm{background:var(--ember);color:#fff;animation:flash 1s steps(2) infinite}
+  @keyframes flash{50%{opacity:.35}}
+
+  nav.tabs{display:flex;gap:4px;margin-top:10px;overflow-x:auto;scrollbar-width:none}
+  nav.tabs::-webkit-scrollbar{display:none}
+  nav.tabs button{flex:0 0 auto;background:transparent;border:0;color:var(--paper);padding:8px 12px;border-radius:10px;font-size:.82rem;font-weight:600;opacity:.55;transition:opacity .15s,background .15s;white-space:nowrap}
+  nav.tabs button[aria-selected="true"]{opacity:1;background:rgba(255,255,255,.12)}
+
+  main{max-width:1080px;margin:0 auto;padding:18px 16px 40px}
+  .view{display:none}
+  .view.active{display:block}
+
+  .flow-grid{display:grid;grid-template-columns:1fr;gap:18px}
+  @media(min-width:860px){.flow-grid{grid-template-columns:290px 1fr;align-items:start}}
+
+  .rail-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden}
+  .rail-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .rail-head h2{font-size:.95rem}
+  .rail-head .toggle{background:none;border:0;color:var(--ink-soft);font-size:.8rem;font-weight:600;display:none}
+  @media(min-width:860px){.rail-wrap{position:sticky;top:150px}}
+  @media(max-width:859px){.rail-head .toggle{display:inline-flex;gap:5px;align-items:center}
+    .rail-body{max-height:0;overflow:hidden;transition:max-height .3s ease}.rail-wrap.open .rail-body{max-height:1800px}}
+  .rail-body{padding:6px 0}
+  .rail{list-style:none;margin:0;padding:4px 16px}
+  .stop{position:relative;padding:0 0 0 30px;min-height:44px}
+  .stop::before{content:"";position:absolute;left:9px;top:20px;bottom:-4px;width:2px;background:var(--line)}
+  .stop:last-child::before{display:none}
+  .dot{position:absolute;left:2px;top:8px;width:16px;height:16px;border-radius:50%;border:2px solid var(--line);background:var(--surface);z-index:1}
+  .stop.done .dot{background:var(--rye);border-color:var(--rye)}
+  .stop.done::before{background:var(--rye)}
+  .stop.current .dot{border-color:var(--ember);background:var(--ember);box-shadow:0 0 0 4px var(--ember-soft);animation:pulse 2.2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 4px var(--ember-soft)}50%{box-shadow:0 0 0 7px rgba(180,102,26,.12)}}
+  .stop .st-body{padding:4px 0 12px}
+  .stop .st-t{font-size:.86rem;font-weight:600}
+  .stop.current .st-t{color:var(--ember)}
+  .stop .st-time{font-family:var(--font-mono);font-size:.72rem;color:var(--ink-soft)}
+  .stop.done .st-time{color:var(--rye)}
+  .group-label{font-family:var(--font-body);font-size:.64rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-soft);margin:14px 0 6px 30px;font-weight:600;list-style:none}
+  .group-label:first-child{margin-top:6px}
+
+  .step-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden}
+  .step-top{padding:20px 20px 16px;border-bottom:1px solid var(--line);background:linear-gradient(var(--surface),var(--surface-2))}
+  .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:.68rem;letter-spacing:1.4px;text-transform:uppercase;font-weight:600;color:var(--ember)}
+  .eyebrow .idx{font-family:var(--font-mono);background:var(--ember-soft);color:var(--ember);padding:2px 7px;border-radius:20px}
+  .step-top h2{font-size:1.5rem;margin:10px 0 6px;letter-spacing:-.3px}
+  .step-goal{color:var(--ink-soft);font-size:.98rem}
+  .step-body{padding:18px 20px}
+  .tips{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:11px}
+  .tips li{position:relative;padding-left:24px;font-size:.95rem}
+  .tips li::before{content:"";position:absolute;left:2px;top:8px;width:7px;height:7px;border-radius:2px;background:var(--rye);transform:rotate(45deg)}
+  .tips li strong{font-weight:600}
+
+  .callout{margin-top:16px;border-radius:var(--radius);padding:13px 15px;font-size:.9rem;border:1px solid}
+  .callout.rye{background:var(--rye-soft);border-color:#cbd7bb;color:#33461f}
+  .callout.ember{background:var(--ember-soft);border-color:#e8cba3;color:#7a4310}
+  .callout.red{background:var(--red-soft);border-color:#e3b5a8;color:#7c2c1a}
+  .callout b{font-weight:600}
+
+  .mini-recipe{margin-top:16px;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  .mini-recipe .mr-h{background:var(--surface-2);padding:8px 13px;font-size:.7rem;letter-spacing:.5px;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+  .mini-recipe table{width:100%;border-collapse:collapse;font-size:.92rem}
+  .mini-recipe td{padding:8px 13px;border-top:1px solid var(--line)}
+  .mini-recipe td:last-child{text-align:right;font-family:var(--font-mono);font-weight:500}
+
+  .timer-box{margin-top:18px;background:var(--ink);color:var(--paper);border-radius:var(--radius-lg);padding:20px;text-align:center;position:relative;overflow:hidden}
+  .timer-box.alarm{animation:flashbg 1s steps(2) infinite}
+  @keyframes flashbg{50%{background:var(--ember)}}
+  .timer-label{font-size:.72rem;letter-spacing:1.5px;text-transform:uppercase;opacity:.6}
+  .timer-read{font-family:var(--font-mono);font-size:3.1rem;font-weight:500;line-height:1;margin:8px 0 4px;letter-spacing:1px}
+  .timer-sub{font-size:.8rem;opacity:.65;font-family:var(--font-mono)}
+  .timer-track{height:5px;background:rgba(255,255,255,.14);border-radius:4px;margin:16px 0 4px;overflow:hidden}
+  .timer-fill{height:100%;background:var(--crumb);width:0;transition:width .4s linear}
+  .timer-box.alarm .timer-fill{background:#fff}
+
+  .btn-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  .btn{border:0;border-radius:12px;padding:14px 18px;font-size:.98rem;font-weight:600;flex:1;min-width:120px;min-height:50px;transition:transform .06s,filter .15s}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:var(--rye);color:#fff}
+  .btn.ember{background:var(--ember);color:#fff}
+  .btn.ghost{background:var(--surface-2);color:var(--ink);border:1px solid var(--line)}
+  .btn.dark{background:rgba(255,255,255,.14);color:var(--paper)}
+  .btn.danger{background:var(--red-soft);color:var(--red);border:1px solid #e3b5a8}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn.full{flex-basis:100%}
+  .btn.sm{padding:10px 14px;min-height:auto;font-size:.88rem;flex:0 0 auto;min-width:auto}
+  .btn:focus-visible,nav.tabs button:focus-visible,.toggle:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--ember);outline-offset:2px}
+
+  .folds{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;justify-content:center}
+  .fold-chip{width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:.85rem;color:var(--paper);opacity:.7}
+  .fold-chip.done{background:var(--rye);border-color:var(--rye);opacity:1}
+  .fold-chip.next{border-color:var(--crumb);color:var(--crumb);opacity:1;animation:pulse2 2s infinite}
+  @keyframes pulse2{50%{box-shadow:0 0 0 4px rgba(239,217,169,.18)}}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:20px;margin-bottom:18px}
+  .card h2{font-size:1.15rem;margin-bottom:4px}
+  .card .sub{color:var(--ink-soft);font-size:.88rem;margin-bottom:16px}
+  .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(min-width:560px){.field-grid{grid-template-columns:repeat(3,1fr)}}
+  .field label{display:block;font-size:.74rem;font-weight:600;letter-spacing:.3px;color:var(--ink-soft);margin-bottom:5px;text-transform:uppercase}
+  .field .inp{display:flex;align-items:center;border:1px solid var(--line);border-radius:11px;background:var(--surface-2);overflow:hidden}
+  .field input,.field select{border:0;background:transparent;padding:12px;width:100%;font-size:1rem;color:var(--ink);-moz-appearance:textfield}
+  .field input::-webkit-outer-spin-button,.field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .field .unit{padding:0 12px;color:var(--ink-soft);font-size:.82rem;font-family:var(--font-mono);white-space:nowrap}
+
+  .presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .preset{border:1px solid var(--line);background:var(--surface-2);border-radius:20px;padding:8px 13px;font-size:.85rem;font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:7px}
+  .preset.active{background:var(--rye);color:#fff;border-color:var(--rye)}
+  .preset .x{opacity:.6;font-weight:700}
+
+  .flour-editor{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin-top:6px}
+  .flour-h{background:var(--surface-2);padding:9px 13px;font-size:.7rem;letter-spacing:.5px;text-transform:uppercase;color:var(--ink-soft);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+  .flour-sum{font-family:var(--font-mono);font-weight:500}
+  .flour-sum.bad{color:var(--red)}
+  .flour-row{display:flex;gap:8px;align-items:center;padding:9px 13px;border-top:1px solid var(--line)}
+  .flour-row select{flex:1;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:10px;font-size:.92rem;color:var(--ink)}
+  .flour-row .pctwrap{display:flex;align-items:center;border:1px solid var(--line);border-radius:9px;background:var(--surface);width:92px}
+  .flour-row .pctwrap input{border:0;background:transparent;padding:10px;width:100%;text-align:right;font-size:.95rem;font-family:var(--font-mono)}
+  .flour-row .pctwrap span{padding-right:10px;color:var(--ink-soft);font-family:var(--font-mono);font-size:.85rem}
+  .flour-row .del{background:var(--surface-2);border:1px solid var(--line);border-radius:9px;width:38px;height:38px;flex:none;color:var(--ink-soft);font-size:1.1rem}
+  .flour-add{width:100%;background:var(--surface);border:0;border-top:1px solid var(--line);padding:11px;color:var(--rye);font-weight:600;font-size:.9rem}
+
+  .recipe-out{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:680px){.recipe-out{grid-template-columns:1fr 1fr}}
+  .rtable{width:100%;border-collapse:collapse}
+  .rtable caption{font-family:var(--font-display);font-weight:700;text-align:left;font-size:1rem;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .rtable caption .tag{font-family:var(--font-mono);font-size:.66rem;font-weight:500;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+  .tag.rye{background:var(--rye-soft);color:#33461f}
+  .tag.ember{background:var(--ember-soft);color:#7a4310}
+  .rtable td{padding:10px 2px;border-bottom:1px solid var(--line);font-size:.95rem}
+  .rtable td:last-child{text-align:right;font-family:var(--font-mono);font-weight:500;white-space:nowrap}
+  .rtable tr:last-child td{border-bottom:0}
+  .rtable td .hint{display:block;font-size:.74rem;color:var(--ink-soft);font-family:var(--font-body);font-weight:400}
+  .totals{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+  .stat{flex:1;min-width:110px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
+  .stat .k{font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-soft);font-weight:600}
+  .stat .v{font-family:var(--font-mono);font-size:1.3rem;font-weight:500;margin-top:2px}
+
+  details.adv{margin-top:8px;border-top:1px solid var(--line);padding-top:14px}
+  details.adv summary{cursor:pointer;font-weight:600;font-size:.9rem;color:var(--rye);list-style:none;display:flex;align-items:center;gap:6px}
+  details.adv summary::-webkit-details-marker{display:none}
+  details.adv summary::before{content:"+";font-family:var(--font-mono);font-weight:700}
+  details.adv[open] summary::before{content:"–"}
+  details.adv .field-grid{margin-top:14px}
+  .seg{display:flex;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--surface-2)}
+  .seg button{flex:1;border:0;background:transparent;padding:11px 6px;font-size:.85rem;font-weight:600;color:var(--ink-soft)}
+  .seg button.on{background:var(--rye);color:#fff}
+
+  textarea.note{width:100%;border:1px solid var(--line);border-radius:11px;background:var(--surface-2);padding:12px;font-size:.95rem;color:var(--ink);min-height:80px;resize:vertical}
+
+  /* Planer */
+  .verdict{border-radius:var(--radius);padding:15px 16px;margin-bottom:16px;border:1px solid;font-size:.95rem}
+  .verdict h3{font-size:1.05rem;margin-bottom:4px}
+  .verdict.ok{background:var(--rye-soft);border-color:#cbd7bb;color:#2e421c}
+  .verdict.warn{background:var(--ember-soft);border-color:#e8cba3;color:#6f3d0e}
+  .verdict.bad{background:var(--red-soft);border-color:#e3b5a8;color:#7c2c1a}
+  .plan-list{list-style:none;margin:14px 0 0;padding:0;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
+  .plan-list li{display:flex;justify-content:space-between;gap:12px;padding:11px 14px;border-top:1px solid var(--line);font-size:.94rem}
+  .plan-list li:first-child{border-top:0}
+  .plan-list li.key{background:var(--surface-2);font-weight:600}
+  .plan-list li.note{color:var(--ink-soft);font-size:.86rem}
+  .plan-list .when{font-family:var(--font-mono);white-space:nowrap}
+  .suggest{margin-top:6px;padding-left:20px}
+  .suggest li{margin:5px 0;font-size:.9rem}
+
+  /* Historie */
+  .hist-stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .hist-item{border:1px solid var(--line);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;background:var(--surface)}
+  .hist-item summary{cursor:pointer;padding:14px 16px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .hist-item summary::-webkit-details-marker{display:none}
+  .hist-item .h-name{font-family:var(--font-display);font-weight:700;font-size:1rem}
+  .hist-item .h-meta{font-size:.78rem;color:var(--ink-soft);font-family:var(--font-mono)}
+  .hist-item .h-stars{font-size:.95rem;letter-spacing:1px;white-space:nowrap}
+  .hist-body{padding:0 16px 16px;font-size:.92rem}
+  .hist-body h4{font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-soft);margin:14px 0 6px}
+  .kv{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dotted var(--line);font-size:.9rem}
+  .kv .v{font-family:var(--font-mono)}
+  .tip-list{list-style:none;padding:0;margin:0}
+  .tip-list li{position:relative;padding-left:20px;margin:6px 0;font-size:.9rem}
+  .tip-list li::before{content:"→";position:absolute;left:0;color:var(--ember);font-weight:700}
+
+  .rate-group{margin:14px 0}
+  .rate-group .rl{font-size:.74rem;text-transform:uppercase;letter-spacing:.4px;color:var(--ink-soft);font-weight:600;margin-bottom:6px}
+  .opts{display:flex;gap:8px;flex-wrap:wrap}
+  .opts button{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:9px 12px;font-size:.88rem;font-weight:600;color:var(--ink-soft);flex:1;min-width:90px}
+  .opts button.on{background:var(--rye);color:#fff;border-color:var(--rye)}
+  .stars{display:flex;gap:6px}
+  .stars button{background:none;border:0;font-size:1.9rem;line-height:1;color:var(--line);padding:0}
+  .stars button.on{color:var(--ember)}
+
+  .help-item{border:1px solid var(--line);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;background:var(--surface)}
+  .help-item summary{cursor:pointer;padding:14px 16px;font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .help-item summary::-webkit-details-marker{display:none}
+  .help-item summary::after{content:"›";font-size:1.3rem;color:var(--ink-soft);transition:transform .2s}
+  .help-item[open] summary::after{transform:rotate(90deg)}
+  .help-item .hc{padding:0 16px 16px;font-size:.93rem}
+  .help-item .hc p{margin:.4rem 0}
+  .help-item .hc b{color:var(--rye)}
+
+  .empty{text-align:center;padding:40px 20px;color:var(--ink-soft)}
+  .empty .big{font-size:2.4rem;margin-bottom:8px}
+  .banner{background:var(--ember-soft);border:1px solid #e8cba3;color:#7a4310;padding:12px 15px;border-radius:var(--radius);font-size:.9rem;margin-bottom:16px}
+
+  footer{text-align:center;color:var(--ink-soft);font-size:.74rem;padding:24px 16px 10px}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120px);background:var(--ink);color:var(--paper);padding:12px 18px;border-radius:12px;font-size:.9rem;box-shadow:var(--shadow);z-index:80;transition:transform .3s;max-width:90vw;text-align:center}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  @media(prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="headrow">
+    <div class="brand"><div class="mark" aria-hidden="true"></div><div><h1>Krume</h1><small>Sauerteig-Begleiter</small></div></div>
+    <div class="now-mini" id="nowMini" hidden><span class="lbl" id="nowLbl">—</span><span class="t" id="nowTimer">--:--</span></div>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-view="flow">Backablauf</button>
+    <button role="tab" aria-selected="false" data-view="planner">Planer</button>
+    <button role="tab" aria-selected="false" data-view="recipe">Rezept</button>
+    <button role="tab" aria-selected="false" data-view="history">Historie</button>
+    <button role="tab" aria-selected="false" data-view="help">Hilfe</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ABLAUF -->
+  <section class="view active" id="view-flow" role="tabpanel">
+    <div id="flowEmpty" class="empty">
+      <div class="big">🌾</div>
+      <h2 style="margin-bottom:6px">Noch kein Backvorgang</h2>
+      <p style="max-width:360px;margin:0 auto 18px">Plane einen Termin oder starte direkt. Die App führt dich Schritt für Schritt vom Anstellgut bis zum ausgekühlten Laib.</p>
+      <div class="btn-row" style="max-width:360px;margin:0 auto">
+        <button class="btn ghost" onclick="switchView('planner')">Backtermin planen</button>
+        <button class="btn primary" onclick="switchView('recipe')">Direkt starten</button>
+      </div>
+    </div>
+    <div id="flowActive" class="flow-grid" hidden>
+      <div class="rail-wrap" id="railWrap">
+        <div class="rail-head"><h2>Zeitplan</h2><button class="toggle" id="railToggle" aria-expanded="false">Anzeigen ▾</button></div>
+        <div class="rail-body"><ul class="rail" id="rail"></ul></div>
+      </div>
+      <div class="step-card" id="stepCard"></div>
+    </div>
+  </section>
+
+  <!-- PLANER -->
+  <section class="view" id="view-planner" role="tabpanel">
+    <div class="card">
+      <h2>Backplaner</h2>
+      <p class="sub">Rechnet mit deinem aktuellen Rezept. Wechsle das Rezept im Tab „Rezept".</p>
+      <div class="seg" id="plan-mode" style="margin-bottom:16px">
+        <button data-v="back" class="on">Rückwärts planen</button><button data-v="window">Zeitfenster prüfen</button>
+      </div>
+      <div id="planBack">
+        <div class="field-grid">
+          <div class="field"><label>Ich lege fest</label>
+            <div class="seg" id="plan-target"><button data-v="bake" class="on">Backbeginn</button><button data-v="baked">Fertig</button><button data-v="slice">Anschneidbar</button></div>
+          </div>
+          <div class="field"><label for="pb-when">Zeitpunkt</label><div class="inp"><input id="pb-when" type="datetime-local"></div></div>
+          <div class="field"><label>Levain</label>
+            <div class="seg" id="pb-levain"><button data-v="fresh" class="on">neu ansetzen</button><button data-v="ready">schon reif</button></div>
+          </div>
+        </div>
+        <div class="btn-row"><button class="btn primary full" onclick="runPlanBack()">Startzeit berechnen</button></div>
+      </div>
+      <div id="planWindow" hidden>
+        <div class="field-grid">
+          <div class="field"><label for="pw-start">Frühester Start</label><div class="inp"><input id="pw-start" type="datetime-local"></div></div>
+          <div class="field"><label for="pw-end">Muss fertig sein</label><div class="inp"><input id="pw-end" type="datetime-local"></div></div>
+          <div class="field"><label>Ziel bei „fertig"</label>
+            <div class="seg" id="pw-target"><button data-v="baked" class="on">gebacken</button><button data-v="slice">ausgekühlt</button></div>
+          </div>
+          <div class="field"><label>Levain</label>
+            <div class="seg" id="pw-levain"><button data-v="fresh" class="on">neu ansetzen</button><button data-v="ready">schon reif</button></div>
+          </div>
+        </div>
+        <div class="btn-row"><button class="btn primary full" onclick="runPlanWindow()">Fenster prüfen</button></div>
+      </div>
+    </div>
+    <div id="planResult"></div>
+  </section>
+
+  <!-- REZEPT -->
+  <section class="view" id="view-recipe" role="tabpanel">
+    <div class="card">
+      <h2>Dein Rezept</h2>
+      <p class="sub">Wähle eine Vorlage oder stell alles selbst ein. Roggen-Vollkorn-Levain, frei geschoben auf dem Pizzastein.</p>
+      <div class="presets" id="presetList"></div>
+      <div class="field-grid">
+        <div class="field"><label for="f-mehl">Mehl gesamt</label><div class="inp"><input id="f-mehl" type="number" min="200" step="50"><span class="unit">g</span></div></div>
+        <div class="field"><label for="f-laibe">Laibe</label><div class="inp"><input id="f-laibe" type="number" min="1" max="6" step="1"></div></div>
+        <div class="field"><label for="f-hydration">Hydration</label><div class="inp"><input id="f-hydration" type="number" min="55" max="95" step="1"><span class="unit">%</span></div></div>
+        <div class="field"><label for="f-salz">Salz</label><div class="inp"><input id="f-salz" type="number" min="0" max="3" step="0.1"><span class="unit">%</span></div></div>
+        <div class="field"><label for="f-levain">Levain / Anstellgut</label><div class="inp"><input id="f-levain" type="number" min="5" max="40" step="1"><span class="unit">%</span></div></div>
+      </div>
+      <div style="margin-top:14px">
+        <label style="display:block;font-size:.74rem;font-weight:600;letter-spacing:.3px;color:var(--ink-soft);margin-bottom:5px;text-transform:uppercase">Mehlmischung</label>
+        <div class="flour-editor">
+          <div class="flour-h"><span>Mehl · Anteil</span><span class="flour-sum" id="flourSum">100 %</span></div>
+          <div id="flourRows"></div>
+          <button class="flour-add" onclick="addFlour()">+ Mehl hinzufügen</button>
+        </div>
+      </div>
+
+      <details class="adv">
+        <summary>Feineinstellung: Gare, Ofen &amp; Zeiten</summary>
+        <div class="field-grid">
+          <div class="field"><label>Raumtemperatur</label><div class="seg" id="seg-temp"><button data-v="kuehl">kühl</button><button data-v="normal">normal</button><button data-v="warm">warm</button></div></div>
+          <div class="field"><label>Kalte Gare</label><div class="seg" id="seg-cold"><button data-v="1">Ja, über Nacht</button><button data-v="0">Nein</button></div></div>
+          <div class="field"><label for="f-coldh">Kalte Gare Dauer</label><div class="inp"><input id="f-coldh" type="number" min="6" max="18" step="1"><span class="unit">h</span></div></div>
+          <div class="field"><label for="f-bulk">Stockgare</label><div class="inp"><input id="f-bulk" type="number" min="120" max="360" step="15"><span class="unit">min</span></div></div>
+          <div class="field"><label for="f-falten">Dehnen &amp; Falten</label><div class="inp"><input id="f-falten" type="number" min="0" max="6" step="1"><span class="unit">×</span></div></div>
+          <div class="field"><label for="f-faltabst">Falt-Abstand</label><div class="inp"><input id="f-faltabst" type="number" min="20" max="60" step="5"><span class="unit">min</span></div></div>
+          <div class="field"><label for="f-stueck">Stückgare (warm)</label><div class="inp"><input id="f-stueck" type="number" min="45" max="240" step="15"><span class="unit">min</span></div></div>
+          <div class="field"><label for="f-vorheiz">Stein vorheizen</label><div class="inp"><input id="f-vorheiz" type="number" min="30" max="75" step="5"><span class="unit">min</span></div></div>
+          <div class="field"><label for="f-stemp">Schwaden-Temp.</label><div class="inp"><input id="f-stemp" type="number" min="200" max="280" step="5"><span class="unit">°C</span></div></div>
+          <div class="field"><label for="f-smin">Schwaden-Zeit</label><div class="inp"><input id="f-smin" type="number" min="10" max="25" step="1"><span class="unit">min</span></div></div>
+          <div class="field"><label for="f-ftemp">Fertig-Temp.</label><div class="inp"><input id="f-ftemp" type="number" min="190" max="250" step="5"><span class="unit">°C</span></div></div>
+          <div class="field"><label for="f-fmin">Fertig-Zeit</label><div class="inp"><input id="f-fmin" type="number" min="15" max="40" step="1"><span class="unit">min</span></div></div>
+          <div class="field"><label for="f-erhol">Stein erholen</label><div class="inp"><input id="f-erhol" type="number" min="8" max="20" step="1"><span class="unit">min</span></div></div>
+          <div class="field"><label for="f-autolyse">Autolyse</label><div class="inp"><input id="f-autolyse" type="number" min="0" max="90" step="5"><span class="unit">min</span></div></div>
+          <div class="field"><label for="f-kern">Ziel-Kerntemperatur</label><div class="inp"><input id="f-kern" type="number" min="92" max="99" step="1"><span class="unit">°C</span></div></div>
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>Zutaten</h2>
+      <p class="sub">Baue zuerst den Levain, dann den Hauptteig.</p>
+      <div class="recipe-out" id="recipeOut"></div>
+      <div class="totals" id="totals"></div>
+    </div>
+
+    <div class="card" style="padding:16px">
+      <h2 style="font-size:1rem;margin-bottom:8px">Als eigene Vorlage speichern</h2>
+      <div class="btn-row" style="margin-top:0">
+        <div class="inp field" style="flex:2;min-width:160px;border:1px solid var(--line);border-radius:11px;background:var(--surface-2)"><input id="save-name" type="text" placeholder="Name, z. B. Mein Landbrot" style="border:0;background:transparent;padding:12px;width:100%;font-size:1rem"></div>
+        <button class="btn ghost" onclick="saveRecipe()">Speichern</button>
+      </div>
+    </div>
+
+    <div class="btn-row"><button class="btn primary full" id="startBtn" onclick="startBakeNow()">Backablauf starten →</button></div>
+  </section>
+
+  <!-- HISTORIE -->
+  <section class="view" id="view-history" role="tabpanel">
+    <div id="histStats" class="hist-stats"></div>
+    <div id="histList"></div>
+  </section>
+
+  <!-- HILFE -->
+  <section class="view" id="view-help" role="tabpanel">
+    <div class="card" style="padding:16px">
+      <h2 style="margin-bottom:2px">Nachschlagen</h2>
+      <p class="sub" style="margin-bottom:14px">Kurze Antworten für zwischendurch.</p>
+      <div id="helpList"></div>
+    </div>
+    <div class="card" style="padding:16px">
+      <h2 style="font-size:1rem;margin-bottom:8px">Backvorgang zurücksetzen</h2>
+      <p class="sub" style="margin-bottom:12px">Löscht den aktuellen Fortschritt und alle Timer. Rezept &amp; Historie bleiben erhalten.</p>
+      <button class="btn ghost" onclick="resetBake(true)">Zurücksetzen</button>
+    </div>
+  </section>
+</main>
+
+<footer id="footer">Krume · dein Sauerteig-Begleiter</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ================= Speicher ================= */
+const store=(()=>{let mem={},ok=false;try{const k="__krume__";localStorage.setItem(k,"1");localStorage.removeItem(k);ok=true;}catch(e){ok=false;}
+  return{get(k){try{return ok?localStorage.getItem(k):(mem[k]??null);}catch(e){return mem[k]??null;}},
+  set(k,v){try{ok?localStorage.setItem(k,v):(mem[k]=v);}catch(e){mem[k]=v;}},persistent:ok};})();
+function load(key,def){try{const r=store.get(key);return r?JSON.parse(r):def;}catch(e){return def;}}
+
+/* ================= Mehle & Presets ================= */
+const FLOURS={
+  rvk:{name:"Roggen Vollkorn",rye:true,wg:true},
+  wvk:{name:"Weizen Vollkorn",wg:true},
+  r1050:{name:"Roggen 1050",rye:true},
+  w550:{name:"Weizen 550"},
+  w1050:{name:"Weizen 1050"},
+  dvk:{name:"Dinkel Vollkorn",wg:true}
+};
+const PRESETS=[
+  {id:"weizen-hell",name:"Weizenbrot hell",desc:"Mild, offene Krume, gelingt sicher.",cfg:{hydration:72,salz:2,levain:20,bulk:240,flours:[{key:"w550",pct:88},{key:"rvk",pct:12}]}},
+  {id:"weizenmisch",name:"Weizenmischbrot",desc:"Deutscher Alltagsklassiker.",cfg:{hydration:74,salz:2,levain:20,bulk:230,flours:[{key:"w1050",pct:65},{key:"r1050",pct:25},{key:"rvk",pct:10}]}},
+  {id:"roggenmisch",name:"Roggenmischbrot kräftig",desc:"Kräftig & aromatisch.",note:"Hoher Roggenanteil — frei geschoben flacher; alternativ Kastenform.",cfg:{hydration:76,salz:2.2,levain:22,bulk:210,flours:[{key:"r1050",pct:55},{key:"rvk",pct:10},{key:"w1050",pct:35}]}},
+  {id:"dinkel-weizen",name:"Dinkel-Weizen",desc:"Nussig, mild.",note:"Dinkel nicht zu lange kneten.",cfg:{hydration:70,salz:2,levain:20,bulk:220,flours:[{key:"dvk",pct:45},{key:"w550",pct:40},{key:"rvk",pct:15}]}},
+  {id:"vollkorn",name:"Vollkorn herzhaft",desc:"Sattes Vollkornbrot.",note:"Vollkorn braucht mehr Wasser & Zeit.",cfg:{hydration:80,salz:2,levain:22,bulk:250,flours:[{key:"wvk",pct:40},{key:"rvk",pct:25},{key:"w1050",pct:35}]}},
+  {id:"landbrot",name:"Weizen-Landbrot",desc:"Rustikal mit Biss.",cfg:{hydration:75,salz:2,levain:20,bulk:240,flours:[{key:"w1050",pct:80},{key:"rvk",pct:20}]}}
+];
+
+/* ================= State ================= */
+const DEFAULTS={mehl:1000,laibe:2,hydration:74,salz:2,levain:20,
+  flours:[{key:"w1050",pct:65},{key:"r1050",pct:25},{key:"rvk",pct:10}],name:"Weizenmischbrot",
+  raumtemp:"normal",kalteGare:1,coldh:10,bulk:230,falten:4,faltabst:30,stueck:120,vorheiz:60,
+  stemp:250,smin:15,ftemp:225,fmin:25,erhol:12,autolyse:45,kern:96};
+
+let cfg=load("krume_cfg",null); if(!cfg){cfg=JSON.parse(JSON.stringify(DEFAULTS));}
+let bake=load("krume_bake",null);
+let history=load("krume_history",[]);
+let userRecipes=load("krume_recipes",[]);
+
+function saveCfg(){store.set("krume_cfg",JSON.stringify(cfg));}
+function saveBake(){store.set("krume_bake",bake?JSON.stringify(bake):"");}
+function saveHistory(){store.set("krume_history",JSON.stringify(history));}
+function saveRecipes(){store.set("krume_recipes",JSON.stringify(userRecipes));}
+
+/* ================= Helfer ================= */
+function tempFactor(t){return t==="kuehl"?1.3:t==="warm"?0.75:1;}
+function ryePct(c){return (c.flours||[]).reduce((s,f)=>s+(FLOURS[f.key]&&FLOURS[f.key].rye?+f.pct:0),0);}
+function wgPct(c){return (c.flours||[]).reduce((s,f)=>s+(FLOURS[f.key]&&FLOURS[f.key].wg?+f.pct:0),0);}
+function flourSum(c){return (c.flours||[]).reduce((s,f)=>s+(+f.pct||0),0);}
+
+function computeRecipe(c){
+  const F=Math.max(0,+c.mehl||0);
+  const sum=flourSum(c)||100;
+  const L=Math.round(F*c.levain/100);
+  const lf=L/2, seed=Math.round(L*0.1), addLevain=Math.max(0,Math.round(lf-seed/2));
+  const totalWater=Math.round(F*c.hydration/100);
+  const waterMix=Math.max(0,totalWater-Math.round(L/2));
+  const salt=Math.round(F*c.salz/100*10)/10;
+  // Mehl im Hauptteig: pro Sorte Zielmenge - (bei rvk) Levain-Mehl
+  const main=[];
+  (c.flours||[]).forEach(f=>{
+    const target=Math.round(F*(+f.pct)/sum);
+    let g=target;
+    if(f.key==="rvk") g=Math.max(0,target-lf);
+    if(g>0) main.push({name:(FLOURS[f.key]||{name:f.key}).name,g});
+  });
+  const dough=Math.round(F+totalWater+salt), perLoaf=Math.round(dough/Math.max(1,c.laibe));
+  return{F,L,seed,addLevain,waterMix,salt,main,dough,perLoaf,totalWater,rye:Math.round(ryePct(c)*100/sum)};
+}
+
+function fmtClock(ts){return new Date(ts).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});}
+function fmtDT(ts){const d=new Date(ts);const wd=["So","Mo","Di","Mi","Do","Fr","Sa"][d.getDay()];
+  return wd+" "+String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")+". "+fmtClock(ts);}
+function fmtDur(ms){if(ms<0)ms=0;const s=Math.round(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),se=s%60;
+  return h>0?h+":"+String(m).padStart(2,"0")+":"+String(se).padStart(2,"0"):String(m).padStart(2,"0")+":"+String(se).padStart(2,"0");}
+function fmtSpan(min){min=Math.round(min);const h=Math.floor(min/60),m=min%60;return h>0?(m?h+" h "+m+" min":h+" h"):m+" min";}
+function toLocalInput(d){const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+p(d.getHours())+":"+p(d.getMinutes());}
+
+/* ================= Stufen ================= */
+function buildStages(c){
+  const r=computeRecipe(c), f=tempFactor(c.raumtemp), rye=r.rye, S=[];
+  const mainRows=r.main.map(m=>[m.name,m.g+" g"]);
+
+  S.push({key:"levain",group:"Vorbereitung",title:"Levain füttern",
+    goal:"Setze deinen Roggen-Levain an — er treibt den ganzen Teig.",
+    tips:["Alles verrühren, locker abdecken, warm stellen (~24–26 °C).","<strong>Roggen reift schnell.</strong> Ab ca. 3 h beobachten.","Reif: Volumen ~verdoppelt, kuppelig, blasig, mild-säuerlich."],
+    recipe:[["Anstellgut",r.seed+" g"],["Roggen-Vollkornmehl",r.addLevain+" g"],["Wasser (~28 °C)",r.addLevain+" g"]],
+    timerMin:Math.round(300*f),timerLabel:"Levain reift (Richtwert)",kind:"ferment"});
+  S.push({key:"levain-check",group:"Vorbereitung",title:"Levain reif?",
+    goal:"Kurzer Reife-Check vor dem Hauptteig.",
+    tips:["<strong>Kuppel & Blasen:</strong> deutlich aufgegangen.","<strong>Geruch:</strong> säuerlich-fruchtig, nicht stechend.","Schwimmprobe bei Roggen unzuverlässig — auf Volumen achten.","Noch flach? Timer verlängern, später prüfen."],kind:"gate"});
+
+  if((+c.autolyse||0)>0){
+    S.push({key:"autolyse",group:"Teig",title:"Autolyse",
+      goal:"Mehl und Wasser vorquellen lassen.",
+      tips:["Nur <strong>Mehl + Wasser</strong> grob vermengen.","Levain und Salz noch NICHT hinein.","Abgedeckt ruhen lassen."],
+      recipe:mainRows.concat([["Wasser",r.waterMix+" g"]]),timerMin:+c.autolyse,timerLabel:"Autolyse",kind:"timer"});
+    S.push({key:"mix",group:"Teig",title:"Hauptteig mischen",goal:"Levain und Salz einarbeiten.",
+      tips:["Levain zugeben, einige Minuten einarbeiten.","Salz zugeben, gründlich einkneten.","Ziel: glatter, dehnbarer Teig (~25–26 °C)."],
+      recipe:[["Levain (reif)",r.L+" g"],["Salz",r.salt+" g"]],kind:"action"});
+  }else{
+    S.push({key:"mix",group:"Teig",title:"Hauptteig mischen",goal:"Alle Zutaten zusammenkneten.",
+      tips:["Mehl, Wasser, Levain mischen.","Salz zugeben und einkneten, bis der Teig sich löst.","Ziel: glatter, dehnbarer Teig (~25–26 °C)."],
+      recipe:mainRows.concat([["Wasser",r.waterMix+" g"],["Levain (reif)",r.L+" g"],["Salz",r.salt+" g"]]),kind:"action"});
+  }
+
+  S.push({key:"bulk",group:"Teig",title:"Stockgare & Dehnen und Falten",
+    goal:"Der Teig geht auf. Falten baut Struktur auf.",
+    tips:["<strong>"+c.falten+"×</strong> dehnen &amp; falten alle "+c.faltabst+" min — die App erinnert dich.","Teig hochziehen, zur Mitte klappen, Schüssel drehen (4 Seiten).","<strong>Fertig:</strong> ~30–50 % aufgegangen, blasig, wabbelt."],
+    timerMin:Math.round(c.bulk*f),timerLabel:"Stockgare",kind:"bulk"});
+  S.push({key:"bulk-check",group:"Teig",title:"Stockgare fertig?",goal:"Reif zum Formen?",
+    tips:["<strong>Volumen:</strong> luftiger, gewölbt, Blasen.","<strong>Wackeltest:</strong> schwabbelt wie Pudding.","Fingerprobe: Delle füllt sich langsam halb zurück."],kind:"gate"});
+
+  S.push({key:"divide",group:"Gare",title:"Teilen & Vorformen",goal:"In "+c.laibe+" Stücke (~"+r.perLoaf+" g) teilen und rund vorformen.",
+    tips:["Teig vorsichtig auf bemehlte Fläche geben.","Locker rundwirken, Schluss nach unten.","Bank-Ruhe entspannt den Teig."],
+    timerMin:25,timerLabel:"Bank-Ruhe",kind:"timer"});
+  S.push({key:"shape",group:"Gare",title:"Formen",goal:"Endgültig formen, in die Gärkörbchen.",
+    tips:["Straff formen, Oberflächenspannung aufbauen.","<strong>Schluss nach oben</strong> ins bemehlte Körbchen.",rye>=20?"Reismehl im Korb verhindert Kleben.":"Gut bemehlen."],kind:"action"});
+
+  if(+c.kalteGare===1){
+    S.push({key:"proof",group:"Gare",title:"Kalte Gare im Kühlschrank",goal:"Über Nacht kühl reifen — Aroma, Schnittbild, Flexibilität.",
+      tips:["Abgedeckt in den Kühlschrank (~4–6 °C).","<strong>Beide Laibe bleiben kalt</strong>, bis sie dran sind — kein Übergaren bei Laib 2.","Backfertig, wenn die Fingerprobe langsam zurückfedert.","Zeit flexibel: "+c.coldh+" h ± 2 h sind okay."],
+      timerMin:c.coldh*60,timerLabel:"Kalte Gare (Richtwert)",kind:"ferment"});
+  }else{
+    S.push({key:"proof",group:"Gare",title:"Stückgare",goal:"Bei Raumtemperatur zur Backreife.",
+      tips:["Abgedeckt warm stellen.","<strong>Fingerprobe:</strong> Delle federt langsam halb zurück = reif.","<strong>Laib 2 kühl stellen</strong>, sobald Laib 1 in den Ofen geht."],
+      timerMin:Math.round(c.stueck*f),timerLabel:"Stückgare",kind:"ferment"});
+  }
+
+  S.push({key:"preheat",group:"Ofen",title:"Ofen & Stein vorheizen",goal:"Pizzastein richtig durchheizen.",
+    tips:["Stein auf mittlerer Schiene, <strong>Ober-/Unterhitze "+c.stemp+" °C</strong>.","Volle Zeit vorheizen — nicht abkürzen.","Schwaden vorbereiten: leeres Blech unten mit einheizen oder Sprühflasche bereit.","Laib 2 bleibt derweil kalt."],
+    timerMin:c.vorheiz,timerLabel:"Vorheizen "+c.stemp+" °C",kind:"timer"});
+
+  const N=Math.max(1,c.laibe);
+  for(let i=1;i<=N;i++){
+    S.push({key:"bake-load-"+i,group:"Ofen",title:"Laib "+i+": Einschießen & Schwaden",goal:"Einschneiden, auf den Stein, sofort Dampf.",
+      tips:["Laib "+i+" auf Backpapier stürzen.","<strong>Zügig einschneiden</strong> (ein tiefer Schnitt reicht).","Auf den Stein ziehen, <strong>schwaden</strong>, Tür schnell zu.","Bei "+c.stemp+" °C mit Dampf backen."],
+      timerMin:c.smin,timerLabel:"Laib "+i+" · Schwaden "+c.stemp+"°C",kind:"timer"});
+    S.push({key:"bake-finish-"+i,group:"Ofen",title:"Laib "+i+": Fertig backen",goal:"Dampf ablassen, Hitze senken, ausbacken.",
+      tips:["<strong>Dampf ablassen:</strong> Blech raus / Tür kurz öffnen.","Auf <strong>"+c.ftemp+" °C</strong> reduzieren.","Ziel: tief goldbraun, <strong>Kerntemperatur ~"+c.kern+" °C</strong>.","Klopftest: Boden klingt hohl."],
+      timerMin:c.fmin,timerLabel:"Laib "+i+" · Fertig "+c.ftemp+"°C",kind:"timer"});
+    if(i<N) S.push({key:"recover-"+i,group:"Ofen",title:"Stein erholen",goal:"Laib "+i+" auskühlen, Stein wieder aufheizen.",
+      tips:["Laib "+i+" aufs Gitter.","Ofen zurück auf <strong>"+c.stemp+" °C</strong>.","<strong>Nächsten Laib erst jetzt</strong> aus der Kälte holen.","Warten, bis der Stein wieder heiß ist."],
+      timerMin:c.erhol,timerLabel:"Stein erholt sich",kind:"timer"});
+  }
+  S.push({key:"cool",group:"Fertig",title:"Auskühlen",goal:"Vollständig auskühlen, bevor du anschneidest.",
+    tips:["Auf einem Gitter auskühlen.","<strong>Nicht warm anschneiden</strong> — Krume ist innen noch nicht fertig.",rye>=30?"Mit viel Roggen ruhig länger warten.":"Mind. 1–2 h Geduld."],
+    timerMin:rye>=30?180:120,timerLabel:"Auskühlen (mindestens)",kind:"timer"});
+  S.push({key:"done",group:"Fertig",title:"Fertig — bewerten",goal:"Beide Laibe sind gebacken. Kurz festhalten, wie's lief.",tips:[],kind:"done"});
+  return S;
+}
+
+/* ================= Planer-Rechnung ================= */
+function planDurations(c,levainFresh){
+  const f=tempFactor(c.raumtemp),segs=[];
+  if(levainFresh) segs.push(["levain","Levain füttern",Math.round(300*f)]);
+  if(+c.autolyse>0) segs.push(["autolyse","Autolyse",+c.autolyse]);
+  segs.push(["mix","Hauptteig mischen",15]);
+  segs.push(["bulk","Stockgare",Math.round(c.bulk*f)]);
+  segs.push(["divide","Teilen & Bank-Ruhe",35]);
+  segs.push(["shape","Formen",10]);
+  const bakeMin=c.laibe*(+c.smin+ +c.fmin)+(c.laibe-1)*(+c.erhol);
+  const coolMin=ryePct(c)>=30?180:120;
+  const sumBefore=segs.reduce((s,x)=>s+x[2],0);
+  return{segs,bakeMin,coolMin,sumBefore,f};
+}
+function buildMilestones(c,t0,levainFresh,gareMin){
+  const {segs,bakeMin,coolMin}=planDurations(c,levainFresh);
+  let t=t0;const M=[];
+  for(const[k,l,m] of segs){M.push({label:l,at:t});t+=m*60000;}
+  M.push({label:(+c.kalteGare?"Kalte Gare beginnt":"Stückgare beginnt"),at:t,soft:true});t+=gareMin*60000;
+  const bakeStart=t;
+  M.push({label:"Ofen an (Stein vorheizen)",at:bakeStart-(+c.vorheiz)*60000,note:true});
+  M.push({label:"Backbeginn — Laib 1 einschießen",at:bakeStart,key:true});t+=bakeMin*60000;
+  const baked=t;M.push({label:"Fertig gebacken",at:baked,key:true});
+  M.push({label:"Anschneidbar (ausgekühlt)",at:baked+coolMin*60000,note:true});
+  return M;
+}
+
+function runPlanBack(){
+  const whenEl=document.getElementById("pb-when");
+  if(!whenEl.value){toast("Bitte einen Zeitpunkt wählen.");return;}
+  const T=new Date(whenEl.value).getTime();
+  const target=segVal("plan-target"),levainFresh=segVal("pb-levain")==="fresh";
+  const {segs,bakeMin,coolMin,sumBefore}=planDurations(cfg,levainFresh);
+  const gareMin=+cfg.kalteGare?cfg.coldh*60:Math.round(cfg.stueck*tempFactor(cfg.raumtemp));
+  let offset=sumBefore+gareMin; // bis Backbeginn
+  if(target==="baked")offset+=bakeMin;
+  if(target==="slice")offset+=bakeMin+coolMin;
+  const t0=T-offset*60000;
+  const M=buildMilestones(cfg,t0,levainFresh,gareMin);
+  let html="";
+  const past=t0<Date.now();
+  html+='<div class="verdict '+(past?"bad":"ok")+'"><h3>'+(past?"So knapp geht's nicht mehr":"Plan steht")+'</h3>'+
+    '<div>'+(levainFresh?"Levain füttern":"Loslegen (Teig mischen)")+' um <b>'+fmtDT(t0)+'</b>.'+
+    (past?" Dieser Start liegt in der Vergangenheit.":"")+'</div>';
+  if(past && levainFresh){
+    // Prüfen ob mit reifem Levain machbar bei Start jetzt
+    const d2=planDurations(cfg,false);let off2=d2.sumBefore+gareMin;
+    if(target==="baked")off2+=d2.bakeMin;if(target==="slice")off2+=d2.bakeMin+d2.coolMin;
+    const finish=Date.now()+off2*60000;
+    html+='<div style="margin-top:6px">Mit <b>bereits reifem Levain</b> und Start jetzt wärst du gegen <b>'+fmtDT(finish)+'</b> so weit.</div>';
+  }
+  html+='</div>';
+  html+=renderMilestones(M);
+  if(!past) html+='<div class="btn-row"><button class="btn primary full" onclick="startFromPlan('+t0+','+(!levainFresh)+')">Ablauf mit diesem Start planen</button></div>';
+  document.getElementById("planResult").innerHTML=html;
+  document.getElementById("planResult").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+function runPlanWindow(){
+  const sEl=document.getElementById("pw-start"),eEl=document.getElementById("pw-end");
+  if(!sEl.value||!eEl.value){toast("Bitte Start und Ende wählen.");return;}
+  const S=new Date(sEl.value).getTime(),E=new Date(eEl.value).getTime();
+  const target=segVal("pw-target"),levainFresh=segVal("pw-levain")==="fresh";
+  const res=document.getElementById("planResult");
+  if(E<=S){res.innerHTML='<div class="verdict bad"><h3>Ende liegt vor dem Start</h3><div>Bitte ein Ende nach dem Startzeitpunkt wählen.</div></div>';return;}
+  const {segs,bakeMin,coolMin,sumBefore}=planDurations(cfg,levainFresh);
+  const fixed=sumBefore+bakeMin+(target==="slice"?coolMin:0);
+  const avail=Math.round((E-S)/60000);
+  const cold=+cfg.kalteGare===1;
+  let html="",gareUse,verdict,vClass,vTitle,vBody,suggestions=[];
+
+  if(cold){
+    const gmin=360,gmax=1080,need=avail-fixed;
+    if(need<gmin){
+      vClass="bad";vTitle="Zu wenig Zeit";
+      const deficit=(fixed+gmin)-avail;
+      vBody="Selbst mit kürzester kalter Gare (6 h) brauchst du ~"+fmtSpan(fixed+gmin)+", dein Fenster sind nur "+fmtSpan(avail)+". Es fehlen ~"+fmtSpan(deficit)+".";
+      suggestions=shorteners(cfg,levainFresh,deficit);
+      html+=verdictBox(vClass,vTitle,vBody,suggestions);
+      res.innerHTML=html;res.scrollIntoView({behavior:"smooth",block:"nearest"});return;
+    }else if(need>gmax){
+      gareUse=gmax;vClass="warn";vTitle="Fenster sehr groß";
+      const idle=avail-(fixed+gmax);
+      vBody="Passt locker. Die kalte Gare wird auf 18 h gesetzt (das Maximum). Es bleiben ~"+fmtSpan(idle)+" Puffer — du könntest ~"+fmtSpan(idle)+" später starten oder alles etwas später legen.";
+    }else{
+      gareUse=need;vClass="ok";vTitle="Passt";
+      vBody="Machbar. Die kalte Gare wird auf ~"+fmtSpan(gareUse)+" angesetzt, damit es genau aufgeht.";
+    }
+  }else{
+    gareUse=Math.round(cfg.stueck*tempFactor(cfg.raumtemp));
+    const need=fixed+gareUse,diff=avail-need;
+    if(diff<-20){
+      vClass="bad";vTitle="Zu wenig Zeit";
+      vBody="Mit warmer Stückgare brauchst du ~"+fmtSpan(need)+", dein Fenster sind "+fmtSpan(avail)+". Es fehlen ~"+fmtSpan(-diff)+".";
+      suggestions=shorteners(cfg,levainFresh,-diff);
+      suggestions.unshift("Kalte Gare (Kühlschrank) einschalten — sie überbrückt große Fenster flexibel.");
+      html+=verdictBox(vClass,vTitle,vBody,suggestions);res.innerHTML=html;res.scrollIntoView({behavior:"smooth",block:"nearest"});return;
+    }else if(diff>90){
+      vClass="warn";vTitle="Zeit übrig";
+      vBody="Reicht aus (~"+fmtSpan(diff)+" Puffer). Bei warmer Gare kannst du den Puffer nicht „vergären“ — starte einfach ~"+fmtSpan(diff)+" später, oder schalte die kalte Gare ein, um die Zeit sinnvoll zu nutzen.";
+    }else{vClass="ok";vTitle="Passt";vBody="Machbar mit ~"+fmtSpan(Math.max(0,diff))+" Puffer.";}
+  }
+  const M=buildMilestones(cfg,S,levainFresh,gareUse);
+  html+=verdictBox(vClass,vTitle,vBody,suggestions);
+  html+=renderMilestones(M);
+  html+='<div class="btn-row"><button class="btn primary full" onclick="startFromPlan('+S+','+(!levainFresh)+')">Ablauf ab diesem Start planen</button></div>';
+  res.innerHTML=html;res.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+function shorteners(c,levainFresh,deficit){
+  const out=[],f=tempFactor(c.raumtemp);
+  if(levainFresh)out.push("<b>Reifen Levain</b> verwenden statt neu ansetzen: spart ~"+fmtSpan(Math.round(300*f))+".");
+  if(+c.autolyse>0)out.push("<b>Autolyse weglassen</b>: spart "+fmtSpan(+c.autolyse)+".");
+  if(c.raumtemp!=="warm")out.push("<b>Wärmer führen</b> (warmer Raum): verkürzt Stockgare deutlich (~"+fmtSpan(Math.round(c.bulk*(f-0.75)))+").");
+  if(+c.kalteGare===1)out.push("Kalte Gare durch <b>warme Stückgare</b> ersetzen: spart mind. ~"+fmtSpan(360-Math.round(c.stueck*f))+".");
+  out.push("Ziel <b>„Backbeginn“</b> statt „fertig/ausgekühlt“ wählen, wenn nur der Ofenstart im Fenster liegen muss.");
+  return out;
+}
+function verdictBox(cls,title,body,sugg){
+  let h='<div class="verdict '+cls+'"><h3>'+title+'</h3><div>'+body+'</div>';
+  if(sugg&&sugg.length){h+='<div style="margin-top:8px;font-weight:600">So wird\'s machbar:</div><ul class="suggest">'+sugg.map(s=>"<li>"+s+"</li>").join("")+'</ul>';}
+  return h+'</div>';
+}
+function renderMilestones(M){
+  return '<ul class="plan-list">'+M.map(m=>'<li class="'+(m.key?"key":m.note?"note":"")+'"><span>'+m.label+'</span><span class="when">'+fmtDT(m.at)+'</span></li>').join("")+'</ul>';
+}
+function startFromPlan(ts,skipLevain){
+  startBake(ts,{skipLevain});
+  switchView("flow");
+  toast(ts>Date.now()?"Geplant — Start "+fmtDT(ts):"Ablauf gestartet");
+}
+
+/* ================= Bake starten ================= */
+function startBakeNow(){
+  if(flourSum(cfg)<1){toast("Bitte mindestens ein Mehl angeben.");return;}
+  if(bake){switchView("flow");return;}
+  startBake(Date.now(),{});switchView("flow");toast("Backablauf gestartet — viel Erfolg!");
+}
+function startBake(startTs,opts){
+  opts=opts||{};
+  const stages=buildStages(cfg),now=Date.now();
+  let idx=0;
+  bake={startedAt:startTs,idx:0,stageKeys:stages.map(s=>s.key),cfgSnap:JSON.parse(JSON.stringify(cfg)),
+    recipeName:cfg.name||"Sauerteig",timers:{},fired:{},done:{},actual:{},bulk:null,
+    pending:startTs>now,startFired:false,assess:{stars:0,ofentrieb:"passt",krume:"passt",kruste:"passt",saeure:"passt",notiz:""}};
+  if(opts.skipLevain){bake.done["levain"]=true;bake.idx=1;idx=1;}
+  bake.plan=computePlan(stages,startTs);
+  if(!bake.pending) bake.actual[stages[idx].key]=now;
+  saveBake();renderFlow();
+}
+function computePlan(stages,from){const plan={};let t=from;
+  for(const s of stages){plan[s.key]=t;let m=s.timerMin||0;if(s.kind==="gate"||s.kind==="action")m=Math.max(m,3);if(s.kind==="done")m=0;t+=m*60000;}
+  return plan;}
+function resetBake(ask){
+  if(ask&&bake&&!confirm("Aktuellen Backvorgang zurücksetzen?"))return;
+  bake=null;saveBake();keepAwake(false);renderFlow();switchView("flow");if(ask)toast("Zurückgesetzt.");
+}
+function stagesForBake(){return buildStages(bake&&bake.cfgSnap?bake.cfgSnap:cfg);}
+
+/* ================= Timer-Engine ================= */
+let audioCtx=null;
+function ensureAudio(){try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}
+function alarmSound(){ensureAudio();if(!audioCtx)return;try{const t0=audioCtx.currentTime;
+  for(let i=0;i<3;i++){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type="sine";o.frequency.value=i%2?660:880;
+  o.connect(g);g.connect(audioCtx.destination);const s=t0+i*0.42;g.gain.setValueAtTime(0,s);g.gain.linearRampToValueAtTime(0.25,s+0.03);
+  g.gain.exponentialRampToValueAtTime(0.001,s+0.34);o.start(s);o.stop(s+0.36);}}catch(e){}}
+async function notify(msg){
+  try{
+    if(!("Notification" in window)||Notification.permission!=="granted")return;
+    const opts={body:msg,icon:"icons/icon-192.png",badge:"icons/icon-192.png",vibrate:[200,100,200,100,400],tag:"krume-timer",renotify:true,requireInteraction:true};
+    if("serviceWorker" in navigator){
+      const reg=await navigator.serviceWorker.ready.catch(()=>null);
+      if(reg&&reg.showNotification){await reg.showNotification("Krume — Sauerteig",opts);return;}
+    }
+    new Notification("Krume — Sauerteig",opts);
+  }catch(e){}
+}
+function askNotify(){try{if("Notification" in window&&Notification.permission==="default")Notification.requestPermission();}catch(e){}}
+let wakeLock=null;
+async function keepAwake(on){try{if(on&&"wakeLock" in navigator){if(!wakeLock)wakeLock=await navigator.wakeLock.request("screen");}
+  else if(wakeLock){await wakeLock.release();wakeLock=null;}}catch(e){}}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&anyTimerRunning())keepAwake(true);});
+
+function currentStage(){const st=stagesForBake();return st[bake.idx];}
+function timerKey(){return bake?currentStage().key:null;}
+function startTimer(min){ensureAudio();askNotify();const k=timerKey();bake.timers[k]=Date.now()+min*60000;bake.fired[k]=false;saveBake();keepAwake(true);renderFlow();}
+function addTime(min){const k=timerKey();if(bake.timers[k]){bake.timers[k]+=min*60000;bake.fired[k]=false;saveBake();renderFlow();}}
+function anyTimerRunning(){if(!bake)return false;const k=timerKey(),e=bake.timers[k];if(e&&Date.now()<e)return true;
+  if(bake.bulk&&bake.bulk.nextFoldAt&&Date.now()<bake.bulk.nextFoldAt)return true;return false;}
+function startBulk(){ensureAudio();askNotify();const c=bake.cfgSnap,now=Date.now(),f=tempFactor(c.raumtemp);
+  bake.timers["bulk"]=now+Math.round(c.bulk*f)*60000;bake.fired["bulk"]=false;
+  bake.bulk={start:now,folds:c.falten,abst:c.faltabst,done:0,nextFoldAt:c.falten>0?now+c.faltabst*60000:null,foldFired:{}};
+  saveBake();keepAwake(true);renderFlow();}
+function foldDone(){const b=bake.bulk;if(!b)return;b.done++;b.nextFoldAt=b.done<b.folds?b.start+(b.done+1)*b.abst*60000:null;saveBake();renderFlow();}
+function nextStage(){const st=stagesForBake();bake.done[st[bake.idx].key]=true;
+  if(bake.idx<st.length-1){bake.idx++;bake.actual[st[bake.idx].key]=Date.now();}keepAwake(false);saveBake();renderFlow();window.scrollTo({top:0,behavior:"smooth"});}
+function prevStage(){if(bake.idx>0){bake.idx--;saveBake();renderFlow();}}
+function beginNow(){bake.pending=false;bake.startedAt=Date.now();const st=stagesForBake();bake.actual[st[bake.idx].key]=Date.now();bake.plan=computePlan(st,Date.now());saveBake();renderFlow();}
+
+/* ================= Render Ablauf ================= */
+function renderFlow(){
+  const empty=document.getElementById("flowEmpty"),active=document.getElementById("flowActive");
+  if(!bake){empty.hidden=false;active.hidden=true;document.getElementById("nowMini").hidden=true;return;}
+  empty.hidden=true;active.hidden=false;
+  const st=stagesForBake();renderRail(st);
+  if(bake.pending&&Date.now()<bake.startedAt){renderPending();return;}
+  renderStep(st[bake.idx]);
+}
+function renderPending(){
+  const card=document.getElementById("stepCard"),first=stagesForBake()[bake.idx];
+  card.innerHTML='<div class="step-top"><span class="eyebrow"><span class="idx">geplant</span>Vorbereitung</span>'+
+    '<h2>Backvorgang geplant</h2><p class="step-goal">Los geht\'s um '+fmtDT(bake.startedAt)+' mit: '+first.title+'.</p></div>'+
+    '<div class="step-body"><div class="timer-box"><div class="timer-label">Start in</div>'+
+    '<div class="timer-read" id="pendRead">'+fmtDur(bake.startedAt-Date.now())+'</div>'+
+    '<div class="timer-sub">'+fmtDT(bake.startedAt)+'</div></div>'+
+    '<div class="callout rye" style="margin-top:14px">Du bekommst zur Startzeit einen Signalton (bei geöffneter App). Bis dahin kannst du entspannen.</div>'+
+    '<div class="btn-row"><button class="btn ghost" onclick="beginNow()">Jetzt schon starten</button><button class="btn danger" onclick="resetBake(true)">Verwerfen</button></div></div>';
+}
+function renderRail(st){
+  const rail=document.getElementById("rail");rail.innerHTML="";let lastG=null;
+  st.forEach((s,i)=>{
+    if(s.group!==lastG){const g=document.createElement("li");g.className="group-label";g.textContent=s.group;rail.appendChild(g);lastG=s.group;}
+    const li=document.createElement("li");li.className="stop"+(bake.done[s.key]?" done":"")+(i===bake.idx&&!bake.pending?" current":"");
+    const t=bake.actual[s.key];
+    const timeStr=bake.done[s.key]&&t?"erledigt "+fmtClock(t):(bake.plan&&bake.plan[s.key]?"geplant "+fmtClock(bake.plan[s.key]):"");
+    li.innerHTML='<span class="dot"></span><div class="st-body"><div class="st-t">'+s.title+'</div><div class="st-time mono">'+timeStr+'</div></div>';
+    li.style.cursor="pointer";li.addEventListener("click",()=>{bake.pending=false;bake.idx=i;saveBake();renderFlow();});
+    rail.appendChild(li);
+  });
+}
+function renderStep(s){
+  const card=document.getElementById("stepCard"),idx=bake.idx+1,total=bake.stageKeys.length;
+  let html='<div class="step-top"><span class="eyebrow"><span class="idx">'+idx+'/'+total+'</span>'+s.group+'</span><h2>'+s.title+'</h2><p class="step-goal">'+s.goal+'</p></div><div class="step-body">';
+  if(s.tips&&s.tips.length)html+='<ul class="tips">'+s.tips.map(t=>"<li>"+t+"</li>").join("")+'</ul>';
+  if(s.recipe){html+='<div class="mini-recipe"><div class="mr-h">In diesen Schritt</div><table>'+s.recipe.map(r=>"<tr><td>"+r[0]+"</td><td>"+r[1]+"</td></tr>").join("")+'</table></div>';}
+  if(s.kind==="bulk")html+=renderBulk(s);
+  else if(s.timerMin)html+=renderTimer(s);
+  else if(s.kind==="gate"){html+='<div class="callout rye"><b>Beurteile den Teig, nicht die Uhr.</b> Passt? Weiter. Sonst zurück und mehr Zeit geben.</div><div class="btn-row"><button class="btn ghost" onclick="prevStage()">← Zurück</button><button class="btn primary" onclick="nextStage()">Passt — weiter →</button></div>';}
+  else if(s.kind==="done")html+=renderDone();
+  else html+='<div class="btn-row"><button class="btn ghost" onclick="prevStage()">← Zurück</button><button class="btn primary" onclick="nextStage()">Erledigt — weiter →</button></div>';
+  html+='</div>';card.innerHTML=html;
+}
+function renderTimer(s){
+  const k=s.key,end=bake.timers[k],now=Date.now();
+  if(!end)return '<div class="btn-row">'+(bake.idx>0?'<button class="btn ghost" onclick="prevStage()">← Zurück</button>':'')+
+    '<button class="btn ember" onclick="startTimer('+s.timerMin+')">Timer starten · '+fmtSpan(s.timerMin)+'</button><button class="btn ghost" onclick="nextStage()">Ohne Timer weiter →</button></div>';
+  const remain=end-now,total=s.timerMin*60000,pct=Math.max(0,Math.min(100,100*(1-remain/total))),done=remain<=0,fer=s.kind==="ferment";
+  let h='<div class="timer-box'+(done?" alarm":"")+'"><div class="timer-label">'+s.timerLabel+'</div><div class="timer-read">'+(done?"00:00":fmtDur(remain))+'</div>'+
+    '<div class="timer-sub">'+(done?"Zeit abgelaufen":"endet um "+fmtClock(end))+'</div><div class="timer-track"><div class="timer-fill" style="width:'+pct+'%"></div></div></div>';
+  h+='<div class="btn-row"><button class="btn dark sm" onclick="addTime(10)">+10 min</button>';
+  if(fer)h+='<button class="btn dark sm" onclick="addTime(30)">+30 min</button>';
+  h+='<button class="btn '+(done?"primary":"ghost")+'" onclick="nextStage()">'+(done?"Weiter →":"Fertig — weiter →")+'</button></div>';
+  if(fer)h+='<div class="callout rye" style="margin-top:12px">Richtwert — beobachte den Teig und geh weiter, sobald er reif ist.</div>';
+  return h;
+}
+function renderBulk(s){
+  if(!bake.bulk||!bake.timers["bulk"])return '<div class="btn-row"><button class="btn ember full" onclick="startBulk()">Stockgare starten</button></div>';
+  const b=bake.bulk,end=bake.timers["bulk"],now=Date.now(),total=(bake.cfgSnap.bulk*tempFactor(bake.cfgSnap.raumtemp))*60000;
+  const remain=end-now,pct=Math.max(0,Math.min(100,100*(1-remain/total))),done=remain<=0;
+  let h='<div class="timer-box'+(done?" alarm":"")+'"><div class="timer-label">Stockgare</div><div class="timer-read">'+(done?"00:00":fmtDur(remain))+'</div>'+
+    '<div class="timer-sub">'+(done?"Reife jetzt prüfen":"endet um "+fmtClock(end))+'</div><div class="timer-track"><div class="timer-fill" style="width:'+pct+'%"></div></div>';
+  if(b.folds>0){h+='<div class="folds">';for(let i=0;i<b.folds;i++){const cls=i<b.done?"done":(i===b.done&&b.nextFoldAt?"next":"");h+='<div class="fold-chip '+cls+'">'+(i<b.done?"✓":(i+1))+'</div>';}h+='</div>';
+    if(b.nextFoldAt){const fr=b.nextFoldAt-now;h+='<div class="timer-sub" style="margin-top:12px">'+(fr<=0?"► Jetzt falten: Satz "+(b.done+1)+" von "+b.folds:"Nächstes Falten (Satz "+(b.done+1)+") in "+fmtDur(fr))+'</div>';}
+    else if(b.done>=b.folds)h+='<div class="timer-sub" style="margin-top:12px">Alle '+b.folds+' Faltvorgänge erledigt ✓</div>';}
+  h+='</div><div class="btn-row">';
+  if(b.nextFoldAt)h+='<button class="btn ember" onclick="foldDone()">Falten erledigt ('+(b.done+1)+'/'+b.folds+')</button>';
+  h+='<button class="btn dark sm" onclick="addTime(15)">+15 min</button><button class="btn '+(done?"primary":"ghost")+'" onclick="nextStage()">'+(done?"Reife prüfen →":"Weiter →")+'</button></div>';
+  return h;
+}
+
+/* ---- Abschluss / Bewertung ---- */
+function setAssess(k,v){bake.assess[k]=v;saveBake();renderFlow();}
+function setStars(n){bake.assess.stars=n;saveBake();renderFlow();}
+function noteInput(v){bake.assess.notiz=v;} // gespeichert beim Absenden
+function optGroup(label,key,opts){
+  return '<div class="rate-group"><div class="rl">'+label+'</div><div class="opts">'+
+    opts.map(o=>'<button class="'+(bake.assess[key]===o[0]?"on":"")+'" onclick="setAssess(\''+key+'\',\''+o[0]+'\')">'+o[1]+'</button>').join("")+'</div></div>';
+}
+function renderDone(){
+  const a=bake.assess;
+  let h='<div class="rate-group"><div class="rl">Gesamt-Bewertung</div><div class="stars">';
+  for(let i=1;i<=5;i++)h+='<button class="'+(a.stars>=i?"on":"")+'" onclick="setStars('+i+')" aria-label="'+i+' Sterne">★</button>';
+  h+='</div></div>';
+  h+=optGroup("Ofentrieb","ofentrieb",[["flach","flach"],["passt","passt"],["top","top"]]);
+  h+=optGroup("Krume","krume",[["dicht","dicht/klitschig"],["passt","passt"],["offen","schön offen"]]);
+  h+=optGroup("Kruste","kruste",[["blass","zu blass"],["passt","passt"],["dunkel","zu dunkel"]]);
+  h+=optGroup("Säure","saeure",[["mild","zu mild"],["passt","passt"],["sauer","zu sauer"]]);
+  h+='<div class="rate-group"><div class="rl">Notizen</div><textarea class="note" id="doneNote" placeholder="Was ist dir aufgefallen?" oninput="noteInput(this.value)">'+(a.notiz||"")+'</textarea></div>';
+  const tips=genTips(a,bake.cfgSnap);
+  h+='<div class="callout ember" style="margin-top:4px"><b>Tipps fürs nächste Mal</b><ul class="tip-list" style="margin-top:6px">'+tips.map(t=>"<li>"+t+"</li>").join("")+'</ul></div>';
+  h+='<div class="btn-row"><button class="btn ghost" onclick="saveRecipe()">Rezept als Vorlage</button><button class="btn primary" onclick="finishBake()">Speichern & abschließen</button></div>';
+  return h;
+}
+function genTips(a,c){
+  const t=[];
+  if(a.ofentrieb==="flach")t.push("Wenig Ofentrieb: Stein länger/heißer vorheizen und kräftiger schwaden. War die Gare weit fortgeschritten, Stückgare bzw. kalte Gare etwas kürzer.");
+  if(a.krume==="dicht")t.push("Dichte/klitschige Krume: vollständig auskühlen lassen, Stockgare/Reife etwas verlängern und Kerntemperatur (~"+(c?c.kern:96)+" °C) sicherstellen.");
+  if(a.kruste==="blass")t.push("Blasse Kruste: Fertig-Phase 3–5 min länger oder Fertig-Temperatur ~10 °C höher.");
+  if(a.kruste==="dunkel")t.push("Sehr dunkle Kruste: Fertig-Temperatur ~10 °C runter oder Backzeit etwas kürzen.");
+  if(a.saeure==="mild")t.push("Zu mild: längere oder kältere Gare, oder etwas mehr Levain für mehr Aroma.");
+  if(a.saeure==="sauer")t.push("Zu sauer: jüngeren/weniger Levain, kalte Gare kürzer oder wärmer und schneller führen.");
+  if(a.ofentrieb==="top"&&a.krume==="offen")t.push("Lief top — gleiche Führung beim nächsten Mal beibehalten.");
+  if(!t.length)t.push("Rund gelaufen — Rezept und Zeiten so beibehalten.");
+  return t;
+}
+function finishBake(){
+  const st=stagesForBake();
+  const started=bake.actual[st[0].key]||bake.startedAt;
+  const bakeStartKey=bake.stageKeys.find(k=>k.indexOf("bake-load-1")===0);
+  const rec={id:"h"+Date.now(),name:bake.recipeName,date:Date.now(),
+    started:started,doneAt:Date.now(),
+    totalMin:Math.round((Date.now()-started)/60000),
+    cfg:bake.cfgSnap,assess:JSON.parse(JSON.stringify(bake.assess)),tips:genTips(bake.assess,bake.cfgSnap),
+    times:{Start:started,Backbeginn:bake.actual[bakeStartKey]||null,Fertig:Date.now()}};
+  history.unshift(rec);saveHistory();
+  bake=null;saveBake();renderHistory();switchView("history");toast("In der Historie gespeichert.");
+}
+
+/* ================= Tick ================= */
+function tick(){
+  if(!bake){document.getElementById("nowMini").hidden=true;return;}
+  if(bake.pending){
+    const rd=document.getElementById("pendRead");if(rd)rd.textContent=fmtDur(bake.startedAt-Date.now());
+    const mini=document.getElementById("nowMini");mini.hidden=false;
+    document.getElementById("nowLbl").textContent="Start geplant";document.getElementById("nowTimer").textContent=fmtDur(bake.startedAt-Date.now());document.getElementById("nowTimer").className="t run";
+    if(Date.now()>=bake.startedAt&&!bake.startFired){bake.startFired=true;bake.pending=false;const st=stagesForBake();bake.actual[st[bake.idx].key]=Date.now();bake.plan=computePlan(st,Date.now());saveBake();alarmSound();notify("Zeit! "+st[bake.idx].title+".");renderFlow();}
+    return;
+  }
+  const st=stagesForBake(),s=st[bake.idx],k=s.key;
+  if(bake.timers[k]&&!bake.fired[k]&&Date.now()>=bake.timers[k]){bake.fired[k]=true;saveBake();alarmSound();notify(s.timerLabel+" — fertig.");keepAwake(false);}
+  if(bake.bulk){
+    if(bake.timers["bulk"]&&!bake.fired["bulk"]&&Date.now()>=bake.timers["bulk"]){bake.fired["bulk"]=true;saveBake();alarmSound();notify("Stockgare — Reife prüfen.");}
+    const b=bake.bulk;if(b.nextFoldAt&&!b.foldFired[b.done]&&Date.now()>=b.nextFoldAt){b.foldFired[b.done]=true;saveBake();alarmSound();notify("Dehnen & Falten — Satz "+(b.done+1)+".");}
+  }
+  updateLiveUI(s);
+}
+function updateLiveUI(s){
+  const mini=document.getElementById("nowMini"),lbl=document.getElementById("nowLbl"),t=document.getElementById("nowTimer");
+  mini.hidden=false;let end=bake.timers[s.key];if(s.kind==="bulk"&&bake.timers["bulk"])end=bake.timers["bulk"];
+  if(end){const remain=end-Date.now();lbl.textContent=s.title;t.textContent=remain<=0?"fertig":fmtDur(remain);t.className="t "+(remain<=0?"alarm":"run");}
+  else{lbl.textContent=s.title;t.textContent="Stufe "+(bake.idx+1);t.className="t";}
+  const card=document.getElementById("stepCard"),box=card.querySelector(".timer-box");
+  if(box){let e=bake.timers[s.key],tot=(s.timerMin||1)*60000;if(s.kind==="bulk"&&bake.timers["bulk"]){e=bake.timers["bulk"];tot=(bake.cfgSnap.bulk*tempFactor(bake.cfgSnap.raumtemp))*60000;}
+    if(e){const remain=e-Date.now(),done=remain<=0;const rd=box.querySelector(".timer-read");if(rd)rd.textContent=done?"00:00":fmtDur(remain);
+      const fl=box.querySelector(".timer-fill");if(fl)fl.style.width=Math.max(0,Math.min(100,100*(1-remain/tot)))+"%";box.classList.toggle("alarm",done);}}
+  if(s.kind==="bulk"&&bake.bulk&&bake.bulk.nextFoldAt){const fr=bake.bulk.nextFoldAt-Date.now();
+    if(fr<=0&&!card.dataset.foldReady){card.dataset.foldReady="1";renderStep(s);}else if(fr>0&&card.dataset.foldReady){delete card.dataset.foldReady;renderStep(s);}}
+}
+setInterval(tick,1000);
+
+/* ================= Rezept-Ansicht ================= */
+const CFG_FIELDS={mehl:"f-mehl",laibe:"f-laibe",hydration:"f-hydration",salz:"f-salz",levain:"f-levain",
+  coldh:"f-coldh",bulk:"f-bulk",falten:"f-falten",faltabst:"f-faltabst",stueck:"f-stueck",vorheiz:"f-vorheiz",
+  stemp:"f-stemp",smin:"f-smin",ftemp:"f-ftemp",fmin:"f-fmin",erhol:"f-erhol",autolyse:"f-autolyse",kern:"f-kern"};
+function bindRecipeInputs(){
+  for(const key in CFG_FIELDS){const el=document.getElementById(CFG_FIELDS[key]);if(!el)continue;
+    el.addEventListener("input",()=>{cfg[key]=parseFloat(el.value)||0;cfg.name=customName();saveCfg();renderRecipeOut();markPreset();});}
+  setSeg("seg-temp",cfg.raumtemp,v=>{cfg.raumtemp=v;saveCfg();});
+  setSeg("seg-cold",String(cfg.kalteGare),v=>{cfg.kalteGare=+v;saveCfg();});
+  setSeg("plan-mode","back",v=>{document.getElementById("planBack").hidden=v!=="back";document.getElementById("planWindow").hidden=v==="back";});
+  setSeg("plan-target","bake",()=>{});setSeg("pb-levain","fresh",()=>{});
+  setSeg("pw-target","baked",()=>{});setSeg("pw-levain","fresh",()=>{});
+}
+function segVal(id){const seg=document.getElementById(id);const on=seg.querySelector("button.on");return on?on.dataset.v:seg.firstElementChild.dataset.v;}
+function setSeg(id,val,cb){const seg=document.getElementById(id);if(!seg)return;
+  [...seg.children].forEach(b=>{b.classList.toggle("on",b.dataset.v===val);
+    b.onclick=()=>{[...seg.children].forEach(x=>x.classList.remove("on"));b.classList.add("on");cb(b.dataset.v);};});}
+function syncInputs(){for(const key in CFG_FIELDS){const el=document.getElementById(CFG_FIELDS[key]);if(el)el.value=cfg[key];}
+  setSegState("seg-temp",cfg.raumtemp);setSegState("seg-cold",String(cfg.kalteGare));}
+function setSegState(id,val){const seg=document.getElementById(id);if(!seg)return;[...seg.children].forEach(b=>b.classList.toggle("on",b.dataset.v===val));}
+function customName(){return cfg._preset?cfg.name:(cfg.name||"Eigenes Rezept");}
+
+function renderFlourEditor(){
+  const box=document.getElementById("flourRows");box.innerHTML="";
+  (cfg.flours||[]).forEach((f,i)=>{
+    const row=document.createElement("div");row.className="flour-row";
+    const sel=document.createElement("select");
+    Object.keys(FLOURS).forEach(k=>{const o=document.createElement("option");o.value=k;o.textContent=FLOURS[k].name;if(k===f.key)o.selected=true;sel.appendChild(o);});
+    sel.onchange=()=>{cfg.flours[i].key=sel.value;cfg._preset=null;cfg.name=customName();saveCfg();renderRecipeOut();markPreset();};
+    const pw=document.createElement("div");pw.className="pctwrap";
+    const inp=document.createElement("input");inp.type="number";inp.min=0;inp.max=100;inp.step=5;inp.value=f.pct;inp.setAttribute("aria-label","Anteil");
+    inp.oninput=()=>{cfg.flours[i].pct=parseFloat(inp.value)||0;cfg._preset=null;cfg.name=customName();saveCfg();updateFlourSum();renderRecipeOnly();markPreset();};
+    const sp=document.createElement("span");sp.textContent="%";pw.appendChild(inp);pw.appendChild(sp);
+    const del=document.createElement("button");del.className="del";del.textContent="×";del.setAttribute("aria-label","Entfernen");
+    del.onclick=()=>{cfg.flours.splice(i,1);cfg._preset=null;saveCfg();renderFlourEditor();renderRecipeOut();markPreset();};
+    row.appendChild(sel);row.appendChild(pw);if(cfg.flours.length>1)row.appendChild(del);
+    box.appendChild(row);
+  });
+  updateFlourSum();
+}
+function addFlour(){const used=(cfg.flours||[]).map(f=>f.key);const next=Object.keys(FLOURS).find(k=>!used.includes(k))||"w550";
+  cfg.flours.push({key:next,pct:0});cfg._preset=null;saveCfg();renderFlourEditor();renderRecipeOut();markPreset();}
+function updateFlourSum(){const s=flourSum(cfg),el=document.getElementById("flourSum");el.textContent=Math.round(s)+" %";el.classList.toggle("bad",Math.abs(s-100)>0.5);}
+
+function renderPresets(){
+  const box=document.getElementById("presetList");box.innerHTML="";
+  PRESETS.forEach(p=>{const b=document.createElement("button");b.className="preset"+(cfg._preset===p.id?" active":"");b.textContent=p.name;b.title=p.desc;
+    b.onclick=()=>applyPreset(p);box.appendChild(b);});
+  userRecipes.forEach(p=>{const b=document.createElement("button");b.className="preset"+(cfg._preset===p.id?" active":"");
+    b.innerHTML=p.name+' <span class="x" title="Löschen">×</span>';
+    b.onclick=(e)=>{if(e.target.classList.contains("x")){if(confirm("Vorlage „"+p.name+"“ löschen?")){userRecipes=userRecipes.filter(x=>x.id!==p.id);saveRecipes();renderPresets();}}else applyPreset(p);};
+    box.appendChild(b);});
+}
+function applyPreset(p){
+  const merged=Object.assign(JSON.parse(JSON.stringify(DEFAULTS)),JSON.parse(JSON.stringify(p.cfg||{})));
+  merged.name=p.name;merged._preset=p.id;
+  // Feineinstellungen des Nutzers behalten, wenn Preset sie nicht setzt
+  ["raumtemp","kalteGare","coldh","falten","faltabst","stueck","vorheiz","stemp","smin","ftemp","fmin","erhol","autolyse","kern","mehl","laibe"].forEach(k=>{if(p.cfg&&p.cfg[k]===undefined&&cfg[k]!==undefined)merged[k]=cfg[k];});
+  cfg=merged;saveCfg();syncInputs();renderFlourEditor();renderRecipeOut();renderPresets();
+  if(p.note)toast(p.note);else toast("„"+p.name+"“ geladen");
+}
+function markPreset(){cfg._preset=null;renderPresets();}
+
+function renderRecipeOut(){renderFlourEditor();renderRecipeOnly();}
+function renderRecipeOnly(){
+  const r=computeRecipe(cfg),out=document.getElementById("recipeOut");
+  const sumWarn=Math.abs(flourSum(cfg)-100)>0.5?'<div class="banner" style="grid-column:1/-1">Mehl-Anteile ergeben '+Math.round(flourSum(cfg))+' % — die Mengen werden anteilig auf 100 % umgerechnet.</div>':"";
+  out.innerHTML=sumWarn+
+    '<table class="rtable"><caption>Levain <span class="tag rye">Roggen · 100 % Hydration</span></caption>'+
+    row("Anstellgut",r.seed+" g","dein reifer Roggen-Starter")+row("Roggen-Vollkornmehl",r.addLevain+" g")+row("Wasser (~28 °C)",r.addLevain+" g")+'</table>'+
+    '<table class="rtable"><caption>Hauptteig <span class="tag ember">nach reifem Levain</span></caption>'+
+    r.main.map(m=>row(m.name,m.g+" g")).join("")+row("Wasser",r.waterMix+" g","gesamt "+r.totalWater+" g inkl. Levain")+row("Levain (reif)",r.L+" g")+row("Salz",r.salt+" g")+'</table>';
+  document.getElementById("totals").innerHTML=stat("Teig gesamt",r.dough+" g")+stat(cfg.laibe+" Laibe · je",r.perLoaf+" g")+stat("Hydration",cfg.hydration+" %")+stat("Roggen gesamt",r.rye+" %");
+  document.getElementById("startBtn").textContent=bake?"Läuft — zum Ablauf":"Backablauf starten →";
+}
+function row(a,b,hint){return "<tr><td>"+a+(hint?'<span class="hint">'+hint+'</span>':"")+"</td><td>"+b+"</td></tr>";}
+function stat(k,v){return '<div class="stat"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>';}
+function saveRecipe(){
+  const nameEl=document.getElementById("save-name");
+  let name=(nameEl&&nameEl.value.trim())|| (bake?bake.recipeName:cfg.name)||"Mein Rezept";
+  const snap=JSON.parse(JSON.stringify(bake?bake.cfgSnap:cfg));snap.name=name;delete snap._preset;
+  const rec={id:"u"+Date.now(),name,cfg:snap};userRecipes.unshift(rec);saveRecipes();
+  if(nameEl)nameEl.value="";renderPresets();toast("Als Vorlage „"+name+"“ gespeichert.");
+}
+
+/* ================= Historie ================= */
+function renderHistory(){
+  const list=document.getElementById("histList"),stats=document.getElementById("histStats");
+  if(!history.length){stats.innerHTML="";list.innerHTML='<div class="empty"><div class="big">📖</div><h2 style="margin-bottom:6px">Noch keine Bäcke</h2><p>Abgeschlossene Backvorgänge landen hier — mit Zeiten, Bewertung und Tipps fürs nächste Mal.</p></div>';return;}
+  const avg=history.reduce((s,h)=>s+(h.assess.stars||0),0)/history.length;
+  stats.innerHTML=stat("Bäcke",history.length)+stat("Ø Bewertung",(avg?avg.toFixed(1):"–")+" ★")+stat("Zuletzt",fmtDT(history[0].date).replace(/ \d{2}:\d{2}$/,""));
+  list.innerHTML=history.map(h=>{
+    const stars="★★★★★".slice(0,h.assess.stars)+"☆☆☆☆☆".slice(0,5-h.assess.stars);
+    const flours=(h.cfg.flours||[]).map(f=>(FLOURS[f.key]||{name:f.key}).name+" "+f.pct+"%").join(", ");
+    let body='<div class="hist-body">';
+    body+='<h4>Zeiten</h4>';
+    Object.keys(h.times).forEach(k=>{if(h.times[k])body+='<div class="kv"><span>'+k+'</span><span class="v">'+fmtDT(h.times[k])+'</span></div>';});
+    body+='<div class="kv"><span>Gesamtdauer</span><span class="v">'+fmtSpan(h.totalMin)+'</span></div>';
+    body+='<h4>Rezept</h4><div class="kv"><span>Mehl</span><span class="v">'+h.cfg.mehl+' g</span></div>'+
+      '<div class="kv"><span>Mischung</span><span class="v" style="font-family:var(--font-body);text-align:right">'+flours+'</span></div>'+
+      '<div class="kv"><span>Hydration / Salz / Levain</span><span class="v">'+h.cfg.hydration+'% / '+h.cfg.salz+'% / '+h.cfg.levain+'%</span></div>';
+    body+='<h4>Bewertung</h4><div class="kv"><span>Ofentrieb</span><span class="v" style="font-family:var(--font-body)">'+h.assess.ofentrieb+'</span></div>'+
+      '<div class="kv"><span>Krume</span><span class="v" style="font-family:var(--font-body)">'+h.assess.krume+'</span></div>'+
+      '<div class="kv"><span>Kruste</span><span class="v" style="font-family:var(--font-body)">'+h.assess.kruste+'</span></div>'+
+      '<div class="kv"><span>Säure</span><span class="v" style="font-family:var(--font-body)">'+h.assess.saeure+'</span></div>';
+    if(h.assess.notiz)body+='<h4>Notizen</h4><p>'+escapeHtml(h.assess.notiz)+'</p>';
+    body+='<h4>Tipps fürs nächste Mal</h4><ul class="tip-list">'+(h.tips||[]).map(t=>"<li>"+t+"</li>").join("")+'</ul>';
+    body+='<div class="btn-row"><button class="btn ghost sm" onclick="reuseRecipe(\''+h.id+'\')">Rezept erneut verwenden</button><button class="btn ghost sm" onclick="saveHistRecipe(\''+h.id+'\')">Als Vorlage speichern</button><button class="btn danger sm" onclick="deleteHist(\''+h.id+'\')">Löschen</button></div></div>';
+    return '<details class="hist-item"><summary><div><div class="h-name">'+h.name+'</div><div class="h-meta">'+fmtDT(h.date)+' · '+fmtSpan(h.totalMin)+'</div></div><div class="h-stars">'+stars+'</div></summary>'+body+'</details>';
+  }).join("");
+}
+function escapeHtml(s){return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+function reuseRecipe(id){const h=history.find(x=>x.id===id);if(!h)return;cfg=JSON.parse(JSON.stringify(h.cfg));cfg._preset=null;saveCfg();syncInputs();renderFlourEditor();renderRecipeOut();renderPresets();switchView("recipe");toast("Rezept geladen.");}
+function saveHistRecipe(id){const h=history.find(x=>x.id===id);if(!h)return;const snap=JSON.parse(JSON.stringify(h.cfg));snap.name=h.name;delete snap._preset;userRecipes.unshift({id:"u"+Date.now(),name:h.name,cfg:snap});saveRecipes();renderPresets();toast("Als Vorlage gespeichert.");}
+function deleteHist(id){if(!confirm("Diesen Eintrag löschen?"))return;history=history.filter(x=>x.id!==id);saveHistory();renderHistory();}
+
+/* ================= Hilfe ================= */
+const HELP=[
+  ["Fingerprobe / Poke-Test","<p>Bemehlten Finger ~1 cm eindrücken.</p><p><b>Reif:</b> Delle federt langsam etwa zur Hälfte zurück.</p><p><b>Untergare:</b> springt schnell ganz zurück → mehr Zeit.</p><p><b>Übergare:</b> Delle bleibt, Teig fällt ein → zügig backen.</p>"],
+  ["Roggen-Levain ist träge","<p>Roggen mag es warm — 26–28 °C beschleunigen deutlich.</p><p>Mehr Anstellgut oder länger führen. Ab Verdopplung reif; Blasen und Kuppel zählen mehr als die Uhr.</p>"],
+  ["Warum bleibt Laib 2 kalt?","<p>Auf einem Stein backst du nacheinander. Stünde Laib 2 warm herum, würde er übergaren, während Laib 1 bäckt.</p><p><b>Lösung:</b> Laib 2 bis zum Einschießen im Kühlschrank lassen — kalte Gare macht das mühelos.</p>"],
+  ["Wenig Ofentrieb / flach","<p>Meist Übergare oder zu wenig Dampf/Hitze.</p><p>Stein <b>voll durchheizen</b>, kräftig schwaden, heiß einschießen. Kalt aus der Gare eingeschossen reißt schöner auf.</p>"],
+  ["Dichte, klitschige Krume","<p>Oft zu früh angeschnitten oder Untergare.</p><p>Vollständig auskühlen lassen (mit Roggen länger). Kerntemperatur ~"+DEFAULTS.kern+" °C und Stockgare nicht zu kurz.</p>"],
+  ["Schwaden ohne Dampffunktion","<p>Leeres Blech unten mit vorheizen, beim Einschießen eine Tasse heißes Wasser hineingeben (Vorsicht, Dampf!).</p><p>Alternativ Teig & Ofenwände mehrfach einsprühen und Tür schnell schließen.</p>"],
+  ["Teig klebt im Gärkorb","<p>Korb gut bemehlen, bei Roggen mit Reismehl-Anteil.</p><p>Schluss nach oben einlegen, vor dem Stürzen den Rand lösen.</p>"],
+  ["Verschiedene Mehle","<p><b>550 / 1050:</b> Type = Mineralstoffgehalt; höhere Zahl = dunkler, mehr Wasser & Aroma.</p><p><b>Vollkorn</b> braucht mehr Wasser und geht kräftiger — Hydration ruhig +3–5 %.</p><p><b>Dinkel</b> nicht zu lange kneten, sonst wird der Teig kurz.</p>"],
+  ["Anstellgut pflegen","<p>Nach dem Backen füttern (z. B. 1:2:2 mit Roggen-VK), kurz antreiben, dann in den Kühlschrank.</p><p>Wöchentlich auffrischen hält ihn fit.</p>"]
+];
+function renderHelp(){document.getElementById("helpList").innerHTML=HELP.map(h=>'<details class="help-item"><summary>'+h[0]+'</summary><div class="hc">'+h[1]+'</div></details>').join("");}
+
+/* ================= Views ================= */
+function switchView(v){document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
+  document.getElementById("view-"+v).classList.add("active");
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.view===v?"true":"false"));
+  if(v==="history")renderHistory();window.scrollTo({top:0});}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>switchView(b.dataset.view)));
+document.getElementById("railToggle").addEventListener("click",()=>{const w=document.getElementById("railWrap");const open=w.classList.toggle("open");
+  const t=document.getElementById("railToggle");t.setAttribute("aria-expanded",open);t.textContent=open?"Verbergen ▴":"Anzeigen ▾";});
+
+let toastT=null;
+function toast(msg){const el=document.getElementById("toast");el.textContent=msg;el.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("show"),3200);}
+
+/* ================= Init ================= */
+function initPlannerDefaults(){
+  const now=new Date();
+  const finish=new Date(now.getTime());finish.setDate(finish.getDate()+1);finish.setHours(10,0,0,0);
+  document.getElementById("pb-when").value=toLocalInput(finish);
+  document.getElementById("pw-start").value=toLocalInput(new Date(now.getTime()+30*60000));
+  document.getElementById("pw-end").value=toLocalInput(finish);
+}
+bindRecipeInputs();
+syncInputs();
+renderFlourEditor();
+renderRecipeOut();
+renderPresets();
+renderHelp();
+renderHistory();
+initPlannerDefaults();
+renderFlow();
+if(!store.persistent){document.getElementById("footer").innerHTML="Krume · Speicherung in dieser Vorschau begrenzt. <b>Lade die Datei herunter und öffne sie im Browser</b>, damit Fortschritt, Historie und Rezepte erhalten bleiben.";}
+
+/* ================= PWA: Service Worker ================= */
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
